@@ -3,6 +3,7 @@ var watch = document.getElementById("watch");
 var time_started = null,
     time_stopped = null,
     time_elapsed_since_stop = 0,
+    time_at_last_stop = null,
     stopwatch = null;
 
 var is_running = false,
@@ -20,12 +21,12 @@ function start() {
     }
 
     if (is_stopped) {
-        var current_time = new Date()
-        time_elapsed_since_stop += current_time - time_stopped;
+        time_at_last_stop = new Date()
+        time_elapsed_since_stop += time_at_last_stop - time_stopped;
         is_stopped = false;
         stopwatch = setInterval(stopwatch_on, 1);
 
-        update_table(true, current_time);
+        update_table(true, time_at_last_stop);
     }
 }
 
@@ -41,7 +42,7 @@ function stop() {
 
 function reset() {
 
-    if(is_running) {
+    if(is_running && !is_stopped) {
       var history = document.getElementById("history");
       history.deleteRow(history.rows.length - 1);
     }
@@ -52,7 +53,7 @@ function reset() {
     time_elapsed_since_stop = 0;
     is_running = false;
     is_stopped = false;
-    watch.innerHTML = "00:00:00:000"
+    watch.innerHTML = "00:00:00.000"
 
 
 }
@@ -83,7 +84,7 @@ function update_table(start, time) {
             });
         }
         else {
-          var coords_text = document.createTextNode("No geo data available");
+          var coords_text = document.createTextNode("No geo data");
           start_coords.appendChild(coords_text);
         }
     }
@@ -101,12 +102,12 @@ function update_table(start, time) {
           });
       }
       else {
-        var coords_text = document.createTextNode("No geo data available");
+        var coords_text = document.createTextNode("No geo data");
         start_coords.appendChild(coords_text);
       }
 
       var elapsed = history.rows[history.rows.length - 1].insertCell(4);
-      var elapsed_time = new Date(time - time_started);
+      var elapsed_time = new Date(time - (time_at_last_stop ? time_at_last_stop : time_started));
       var elapsed_text = document.createTextNode(watch_repr(elapsed_time));
       elapsed.appendChild(elapsed_text);
     }
@@ -119,9 +120,9 @@ function watch_repr(date) {
         msc = date.getUTCMilliseconds();
 
     return (hrs > 10 ? hrs : "0" + hrs.toString()) + ":"
-                    + (min > 10 ? min : "0" + min.toString()) + ":"
-                    + (sec > 10 ? sec : "0" + sec.toString()) + ":"
-                    + (msc > 100 ? msc : (msc > 10 ? "0" + msc.toString() : "00" + msc.toString()));
+            + (min > 10 ? min : "0" + min.toString()) + ":"
+            + (sec > 9 ? sec : "0" + sec.toString()) + "."
+            + (msc > 100 ? msc : (msc > 10 ? "0" + msc.toString() : "00" + msc.toString()));
 }
 
 function time_repr(date) {
@@ -134,9 +135,9 @@ function time_repr(date) {
         timezone = tz_parse[tz_parse.length - 2];
 
     return (hrs > 10 ? hrs : "0" + hrs.toString()) + ":"
-                    + (min > 10 ? min : "0" + min.toString()) + ":"
-                    + (sec > 10 ? sec : "0" + sec.toString())
-                    + " " + timezone;
+            + (min > 10 ? min : "0" + min.toString()) + ":"
+            + (sec > 10 ? sec : "0" + sec.toString())
+            + " " + timezone;
 }
 
 function pos_repr(position) {
