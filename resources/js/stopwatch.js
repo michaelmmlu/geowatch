@@ -121,7 +121,7 @@ function watch_repr(date) {
 
     return (hrs > 10 ? hrs : "0" + hrs.toString()) + ":"
             + (min > 10 ? min : "0" + min.toString()) + ":"
-            + (sec > 9 ? sec : "0" + sec.toString()) + "."
+            + (sec > 10 ? sec : "0" + sec.toString()) + "."
             + (msc > 100 ? msc : (msc > 10 ? "0" + msc.toString() : "00" + msc.toString()));
 }
 
