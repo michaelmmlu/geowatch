@@ -98,14 +98,14 @@ function update_coords(index) {
         var coords_text = document.createTextNode(pos_repr(position));
         start_coords.removeChild(start_coords.childNodes[0]);
         start_coords.appendChild(coords_text);
-        if(index ==3) {
+        if(index == 3) {
           update_storage();
         }
     }, function() {
         var coords_text = document.createTextNode("No geo data");
         start_coords.removeChild(start_coords.childNodes[0]);
         start_coords.appendChild(coords_text);
-        if(index ==3) {
+        if(index == 3) {
           update_storage();
         }
     });

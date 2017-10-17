@@ -1,0 +1,43 @@
+@import url(http://fonts.googleapis.com/css?family=Open+Sans);
+
+body {
+    background-color: white;
+}
+
+h1 {
+    font-family: "Open Sans";
+    font-weight: lighter;
+    line-height: 26.4px;
+    text-align: center;
+    font-size: 10vw;
+}
+
+table {
+    width: 100%;
+    font-family: "Open Sans";
+    font-weight: 300;
+    line-height: 26.4px;
+    border-collapse: collapse;
+    overflow-y: auto;
+}
+
+th {
+    height: 3.9vw;
+    font-size: 1.4vw;
+    font-weight: bold;
+    text-align: center;
+    width: 20%;
+}
+
+td {
+    text-align: center;
+    height: 2.9vw;
+    width: 20%;
+    font-size: 1.1vw;
+    table-layout: fixed;
+    vertical-align: middle;
+}
+
+tr:hover {
+    background-color: #f5f5f5;
+}
