@@ -2,8 +2,6 @@ var watch = document.getElementById("watch");
 
 var time_started = null,
     time_stopped = null,
-    time_elapsed_since_stop = 0,
-    time_at_last_stop = null,
     stopwatch = null;
 
 var is_running = false;
@@ -14,6 +12,7 @@ function toggle() {
     if (!is_running) {
           is_running = true;
           document.getElementById("toggle").innerHTML = "Stop";
+          document.getElementById("reset").innerHTML = "Cancel";
           time_started = new Date();
           stopwatch = setInterval(stopwatch_on, 1);
 
@@ -21,31 +20,41 @@ function toggle() {
     }
     else {
       time_stopped = new Date();
-
       update_table(false, time_stopped);
+
+      clearInterval(stopwatch);
+      document.getElementById("toggle").innerHTML = "Start";
+      document.getElementById("reset").innerHTML = "Reset";
+      time_started = null;
+      time_stopped = null;
+      is_running = false;
+      watch.innerHTML = "00:00:00.000"
+    }
+}
+
+function reset() {
+    if(!is_running) {
+      var history = document.getElementById("history");
+      var new_history = document.createElement("tbody");
+      new_history.setAttribute("id", "history");
+      history.parentNode.replaceChild(new_history, history);
+    }
+    else {
+      var history = document.getElementById("history");
+      history.deleteRow(history.rows.length - 1);
 
       clearInterval(stopwatch);
       document.getElementById("toggle").innerHTML = "Start";
       time_started = null;
       time_stopped = null;
-      time_elapsed_since_stop = 0;
       is_running = false;
-      is_stopped = false;
       watch.innerHTML = "00:00:00.000"
-
     }
-}
-
-function reset() {
-    var history = document.getElementById("history");
-    var new_history = document.createElement("tbody");
-    new_history.setAttribute("id", "history");
-    history.parentNode.replaceChild(new_history, history);
 }
 
 function stopwatch_on() {
     var current_time = new Date(),
-        time_elapsed = new Date(current_time - time_started - time_elapsed_since_stop);
+        time_elapsed = new Date(current_time - time_started);
 
     watch.innerHTML = watch_repr(time_elapsed);
 }
@@ -92,7 +101,7 @@ function update_table(start, time) {
       }
 
       var elapsed = history.rows[history.rows.length - 1].insertCell(4);
-      var elapsed_time = new Date(time - (time_at_last_stop ? time_at_last_stop : time_started));
+      var elapsed_time = new Date(time -  time_started);
       var elapsed_text = document.createTextNode(watch_repr(elapsed_time));
       elapsed.appendChild(elapsed_text);
     }
