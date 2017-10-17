@@ -6,56 +6,41 @@ var time_started = null,
     time_at_last_stop = null,
     stopwatch = null;
 
-var is_running = false,
-    is_stopped = false;
+var is_running = false;
 
 var position = null;
 
-function start() {
+function toggle() {
     if (!is_running) {
-          is_running = true
+          is_running = true;
+          document.getElementById("toggle").innerHTML = "Stop";
           time_started = new Date();
           stopwatch = setInterval(stopwatch_on, 1);
 
           update_table(true, time_started);
     }
-
-    if (is_stopped) {
-        time_at_last_stop = new Date()
-        time_elapsed_since_stop += time_at_last_stop - time_stopped;
-        is_stopped = false;
-        stopwatch = setInterval(stopwatch_on, 1);
-
-        update_table(true, time_at_last_stop);
-    }
-}
-
-function stop() {
-    if(!is_stopped) {
+    else {
       time_stopped = new Date();
-      clearInterval(stopwatch);
 
       update_table(false, time_stopped);
+
+      clearInterval(stopwatch);
+      document.getElementById("toggle").innerHTML = "Start";
+      time_started = null;
+      time_stopped = null;
+      time_elapsed_since_stop = 0;
+      is_running = false;
+      is_stopped = false;
+      watch.innerHTML = "00:00:00.000"
+
     }
-    is_stopped = true;
 }
 
 function reset() {
-
-    if(is_running && !is_stopped) {
-      var history = document.getElementById("history");
-      history.deleteRow(history.rows.length - 1);
-    }
-
-    clearInterval(stopwatch);
-    time_started = null;
-    time_stopped = null;
-    time_elapsed_since_stop = 0;
-    is_running = false;
-    is_stopped = false;
-    watch.innerHTML = "00:00:00.000"
-
-
+    var history = document.getElementById("history");
+    var new_history = document.createElement("tbody");
+    new_history.setAttribute("id", "history");
+    history.parentNode.replaceChild(new_history, history);
 }
 
 function stopwatch_on() {
@@ -119,10 +104,10 @@ function watch_repr(date) {
         sec = date.getUTCSeconds(),
         msc = date.getUTCMilliseconds();
 
-    return (hrs > 10 ? hrs : "0" + hrs.toString()) + ":"
-            + (min > 10 ? min : "0" + min.toString()) + ":"
-            + (sec > 10 ? sec : "0" + sec.toString()) + "."
-            + (msc > 100 ? msc : (msc > 10 ? "0" + msc.toString() : "00" + msc.toString()));
+    return (hrs >= 10 ? hrs : "0" + hrs.toString()) + ":"
+            + (min >= 10 ? min : "0" + min.toString()) + ":"
+            + (sec >= 10 ? sec : "0" + sec.toString()) + "."
+            + (msc >= 100 ? msc : (msc >= 10 ? "0" + msc.toString() : "00" + msc.toString()));
 }
 
 function time_repr(date) {
@@ -134,9 +119,9 @@ function time_repr(date) {
     var tz_parse = date.toString().split(" ")
         timezone = tz_parse[tz_parse.length - 2];
 
-    return (hrs > 10 ? hrs : "0" + hrs.toString()) + ":"
-            + (min > 10 ? min : "0" + min.toString()) + ":"
-            + (sec > 10 ? sec : "0" + sec.toString())
+    return (hrs >= 10 ? hrs : "0" + hrs.toString()) + ":"
+            + (min >= 10 ? min : "0" + min.toString()) + ":"
+            + (sec >= 10 ? sec : "0" + sec.toString())
             + " " + timezone;
 }
 

@@ -4,14 +4,17 @@
 <head>
   <title>geowatch</title>
   <link rel="stylesheet" type="text/css" href="resources/css/main.css">
+  <link rel="icon" type="image/png" href="resources/img/geowatch.png"/>
 </head>
 
 <body>
 
 <h1 id="watch"> 00:00:00.000 </h1>
-<button onClick = "start()"> Start </button>
-<button onClick = "stop()"> Stop </button>
-<button onClick = "reset()"> Reset </button>
+
+<div align = center>
+  <button class = "w3-button w3-green" onClick = "toggle()" id = "toggle"> Start </button>
+  <button class = "w3-button w3-orange" onClick = "reset()"> Reset </button>
+</div>
 
 <table id = "headers">
   <thead>
