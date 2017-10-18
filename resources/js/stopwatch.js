@@ -21,7 +21,7 @@ function toggle() {
         document.getElementById("reset").innerHTML = "Cancel";
         time_started = new Date();
         stopwatch = setInterval(stopwatch_on, 1);
-
+        localStorage.setItem("time", time_started.getTime());
         timezone_offset = get_timezone(time_started);
     }
     else {
@@ -55,9 +55,11 @@ function reset() {
         var history = document.getElementById("history");
         history.deleteRow(history.rows.length - 1);
 
+        localStorage.clear();
         update_storage();
         clearInterval(stopwatch);
         document.getElementById("toggle").innerHTML = "Start";
+        document.getElementById("reset").innerHTML = "Reset";
         time_started = null;
         time_stopped = null;
         is_running = false;
@@ -106,6 +108,7 @@ function update_coords(index, position = null) {
     var coords = entry.insertCell(index);
     if (position) {
         coords.appendChild(document.createTextNode(pos_repr(position)));
+        update_storage();
     }
     else {
         coords.appendChild(document.createTextNode("Locating..."));
@@ -113,16 +116,12 @@ function update_coords(index, position = null) {
             var coords_text = document.createTextNode(pos_repr(position));
             coords.removeChild(coords.childNodes[0]);
             coords.appendChild(coords_text);
-            if(index == 3) {
-              update_storage();
-            }
+            update_storage();
         }, function() {
             var coords_text = document.createTextNode("No geo data");
             coords.removeChild(coords.childNodes[0]);
             coords.appendChild(coords_text);
-            if(index == 3) {
-              update_storage();
-            }
+            update_storage();
         });
     }
 
@@ -181,10 +180,11 @@ function pos_repr(position) {
 
 //goes through every row of history table and updates storage
 function update_storage() {
+
     var history = document.getElementById("history");
     for(var i = 0; i < history.rows.length; i++) {
         var entry_row = []
-        for(var j = 0; j < 5; j++) {
+        for(var j = 0; j < history.rows[i].cells.length; j++) {
             entry_row.push(history.rows[i].cells[j].innerHTML);
         }
         localStorage.setItem(i, JSON.stringify(entry_row));
@@ -192,9 +192,30 @@ function update_storage() {
 }
 
 //initializes history table from storage row by row
+//if there is an incomplete row, stopwatch was closed while still running
+//starts the stopwatch accounting for time elapsed while closed
 function retrieve_storage() {
     var history = document.getElementById("history");
+
     for(var i = 0; i < localStorage.length; i++) {
+        if(JSON.parse(localStorage.getItem(localStorage.key(i))).length == 2) {
+          var saved_entry = JSON.parse(localStorage.getItem(localStorage.key(i)));
+          var entry = history.insertRow(history.rows.length);
+
+          var start_time = entry.insertCell(0);
+          start_time.innerHTML = saved_entry[0];
+
+          var start_coords = entry.insertCell(1);
+          start_coords.innerHTML = saved_entry[1];
+
+          time_started = localStorage.getItem("time");
+          is_running = true;
+          document.getElementById("toggle").innerHTML = "Stop";
+          document.getElementById("reset").innerHTML = "Cancel";
+          stopwatch = setInterval(stopwatch_on, 1);
+          break;
+        }
+
         var saved_entry = JSON.parse(localStorage.getItem(localStorage.key(i)));
         var entry = history.insertRow(history.rows.length);
 
