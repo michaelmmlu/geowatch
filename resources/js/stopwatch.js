@@ -1,17 +1,19 @@
 var watch = document.getElementById("watch");
 
+//initialize global variables used by functions
 var time_started = null,
     time_stopped = null,
-    stopwatch = null;
+    timezone_offset = null,
+    stopwatch = null,
+    is_running = false;
 
-var is_running = false;
-
-var position = null;
-
+//initialize history table from storage, if possible
 if(localStorage.getItem(0)) {
     retrieve_storage();
 }
 
+//start/stop toggle button: if stop is clicked,
+//reset all public variables and the stopwatch header field
 function toggle() {
     if (!is_running) {
         is_running = true;
@@ -20,7 +22,7 @@ function toggle() {
         time_started = new Date();
         stopwatch = setInterval(stopwatch_on, 1);
 
-        update_table(true, time_started);
+        timezone_offset = get_timezone(time_started);
     }
     else {
         time_stopped = new Date();
@@ -37,6 +39,10 @@ function toggle() {
     }
 }
 
+/* reset button: if clicked while stopwatch is running,
+cancels current measurement and deletes entry from table;
+if clicked while stopped, clears history table
+and everything from storage */
 function reset() {
     if(!is_running) {
         var history = document.getElementById("history");
@@ -44,7 +50,6 @@ function reset() {
         new_history.setAttribute("id", "history");
         history.parentNode.replaceChild(new_history, history);
         localStorage.clear();
-        console.log("Cleared");
     }
     else {
         var history = document.getElementById("history");
@@ -60,6 +65,8 @@ function reset() {
     }
 }
 
+//updates stopwatch by finding difference between
+//current time and stop time
 function stopwatch_on() {
     var current_time = new Date(),
         time_elapsed = new Date(current_time - time_started);
@@ -67,10 +74,11 @@ function stopwatch_on() {
     watch.innerHTML = watch_repr(time_elapsed);
 }
 
-function update_table(start, time) {
+//calls all sub-functions to update history table
+function update_table(start, time, position = null) {
     if(start) {
         update_time(0, time);
-        update_coords(1);
+        update_coords(1, position);
     }
     else {
         update_time(2, time);
@@ -80,37 +88,47 @@ function update_table(start, time) {
     }
 }
 
+//fills cell at given index with time
 function update_time(index, time) {
     var history = document.getElementById("history");
-    var entry = (index == 0 ? history.insertRow(history.rows.length)
-                            : history.rows[history.rows.length - 1]);
-    var start_time = entry.insertCell(index);
+    var entry = history.rows[history.rows.length - 1];
+    var time_cell = entry.insertCell(index);
     var time_text = document.createTextNode(time_repr(time));
-    start_time.appendChild(time_text);
+    time_cell.appendChild(time_text);
 }
 
-function update_coords(index) {
+/* fills cell at given index with position
+if position is not provided, use geolocation api
+to find current location */
+function update_coords(index, position = null) {
     var history = document.getElementById("history");
     var entry = history.rows[history.rows.length - 1];
-    var start_coords = entry.insertCell(index);
-    start_coords.appendChild(document.createTextNode("Locating..."));
-    navigator.geolocation.getCurrentPosition(function(position) {
-        var coords_text = document.createTextNode(pos_repr(position));
-        start_coords.removeChild(start_coords.childNodes[0]);
-        start_coords.appendChild(coords_text);
-        if(index == 3) {
-          update_storage();
-        }
-    }, function() {
-        var coords_text = document.createTextNode("No geo data");
-        start_coords.removeChild(start_coords.childNodes[0]);
-        start_coords.appendChild(coords_text);
-        if(index == 3) {
-          update_storage();
-        }
-    });
+    var coords = entry.insertCell(index);
+    if (position) {
+        coords.appendChild(document.createTextNode(pos_repr(position)));
+    }
+    else {
+        coords.appendChild(document.createTextNode("Locating..."));
+        navigator.geolocation.getCurrentPosition(function(position) {
+            var coords_text = document.createTextNode(pos_repr(position));
+            coords.removeChild(coords.childNodes[0]);
+            coords.appendChild(coords_text);
+            if(index == 3) {
+              update_storage();
+            }
+        }, function() {
+            var coords_text = document.createTextNode("No geo data");
+            coords.removeChild(coords.childNodes[0]);
+            coords.appendChild(coords_text);
+            if(index == 3) {
+              update_storage();
+            }
+        });
+    }
+
 }
 
+//fills cell with given index with time elapsed
 function update_elapsed(index, time) {
     var history = document.getElementById("history");
     var elapsed = history.rows[history.rows.length - 1].insertCell(4);
@@ -119,6 +137,7 @@ function update_elapsed(index, time) {
     elapsed.appendChild(elapsed_text);
 }
 
+//string representation of stopwatch time
 function watch_repr(date) {
     var hrs = date.getUTCHours(),
         min = date.getUTCMinutes(),
@@ -131,26 +150,36 @@ function watch_repr(date) {
             + (msc >= 100 ? msc : (msc >= 10 ? "0" + msc.toString() : "00" + msc.toString()));
 }
 
-function time_repr(date) {
-    var hrs = date.getHours(),
-        min = date.getMinutes(),
-        sec = date.getSeconds(),
-        msc = date.getMilliseconds();
+//string representation of date time
+function time_repr(time) {
+    var local_time = new Date(time.getTime() + timezone_offset);
+    var hrs = local_time.getHours(),
+        min = local_time.getMinutes(),
+        sec = local_time.getSeconds(),
+        converted_tz = timezone_offset / 36;
 
-    var tz_parse = date.toString().split(" "),
-        timezone = tz_parse[tz_parse.length - 2];
+    if(converted_tz < 1000) {
+        if(converted_tz < 0) {
+          converted_tz = "-0" + converted_tz.toString().substring(1);
+        }
+        else {
+          converted_tz = "0" + converted_tz.toString();
+        }
+    }
 
     return (hrs >= 10 ? hrs : "0" + hrs.toString()) + ":"
             + (min >= 10 ? min : "0" + min.toString()) + ":"
             + (sec >= 10 ? sec : "0" + sec.toString())
-            + " " + timezone;
+            + " UTC" + converted_tz;
 }
 
+//string representation of a position
 function pos_repr(position) {
     return (position.coords.latitude > 0 ? "+" : "") + position.coords.latitude.toFixed(3) + "\xB0, "
           + (position.coords.longitude > 0 ? "+" : "") + position.coords.longitude.toFixed(3) + "\xB0";
 }
 
+//goes through every row of history table and updates storage
 function update_storage() {
     var history = document.getElementById("history");
     for(var i = 0; i < history.rows.length; i++) {
@@ -159,10 +188,10 @@ function update_storage() {
             entry_row.push(history.rows[i].cells[j].innerHTML);
         }
         localStorage.setItem(i, JSON.stringify(entry_row));
-        console.log(JSON.stringify(entry_row));
     }
 }
 
+//initializes history table from storage row by row
 function retrieve_storage() {
     var history = document.getElementById("history");
     for(var i = 0; i < localStorage.length; i++) {
@@ -184,4 +213,32 @@ function retrieve_storage() {
         var elapsed_time = entry.insertCell(4);
         elapsed_time.innerHTML = saved_entry[4];
     }
+}
+
+//uses google timezone api to detect which time zone
+//the stopwatch starts at
+function get_timezone(time_started) {
+    var xml_https = new XMLHttpRequest();
+    var history = document.getElementById("history");
+
+    var temp = history.insertRow(history.rows.length);
+    var time_cell = temp.insertCell(0);
+    time_cell.innerHTML = "Getting time zone...";
+
+    navigator.geolocation.getCurrentPosition(function(position) {
+        var start_location = position.coords.latitude + "," + position.coords.longitude;
+        var timestamp = time_started.getTime() / 1000 + time_started.getTimezoneOffset() * 60;
+        var api_key = "AIzaSyBUUENRDNUP-6xxWRYK96JafOxxVWNOI5g";
+        var call_api = "https://maps.googleapis.com/maps/api/timezone/json?location=" + start_location + "&timestamp=" + timestamp + "&key=" + api_key;
+        xml_https.open("Get", call_api, false);
+        xml_https.onload = function () {
+          if(xml_https.status === 200) {
+            var output = JSON.parse(xml_https.responseText);
+            timezone_offset = output.dstOffset + output.rawOffset;
+          }
+        }
+        xml_https.send();
+        history.rows[history.rows.length-1].deleteCell(0);
+        update_table(true, time_started, position);
+    });
 }
