@@ -27,7 +27,9 @@ function toggle() {
     else {
         time_stopped = new Date();
         update_table(false, time_stopped);
-
+        
+        localStorage.clear();
+        update_storage();
         clearInterval(stopwatch);
         document.getElementById("toggle").innerHTML = "Start";
         document.getElementById("reset").innerHTML = "Reset";
